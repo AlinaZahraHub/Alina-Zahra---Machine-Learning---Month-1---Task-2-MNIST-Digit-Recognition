@@ -5,11 +5,9 @@
 ---
 
 ## 🔗 Live Demo
-<img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/b0086e91-fde4-4dbe-b158-047acb7c631e" />
+<img width="1919" height="903" alt="image" src="https://github.com/user-attachments/assets/fde8a77e-8c20-42a7-aebe-25c250636a2a" />
 
-
-
-* **Live Application:** [GitHub Repository](https://github.com/AlinaZahraHub/Alina-Zahra---Machine-Learning---Month-1---Task-2-MNIST-Digit-Recognition)
+* **Live Application:** [Streamlit Live App](https://mnist-digit-recognition-app.streamlit.app/)
 
 ---
 
@@ -22,16 +20,16 @@ Handwritten digit recognition serves as a foundational benchmark in computer vis
 * **CNN Classification Engine:** Powered by a deep learning convolutional model optimized for pixel image feature extraction.
 * **Interactive Drawing Canvas:** Features a responsive built-in drawing board allowing users to sketch digits live.
 * **Image Upload Support:** Enables users to upload external handwritten digit images (PNG/JPG) for immediate inference.
-* **Live Probability Distribution:** Visualizes confidence scores and class probability bars across all digits from 0 to 9.
-* **Cyberpunk Glassmorphism UI:** Designed with a sleek, modern dark-mode interface built using custom CSS and Python web frameworks.
+* **Live Probability Distribution:** Visualizes confidence scores and class probability breakdown across all digits from 0 to 9.
+* **Cyberpunk Glassmorphism UI:** Designed with a sleek, modern dark-mode interface built using custom CSS and Streamlit components.
 
 ---
 
 ## 🛠️ Tech Stack & Tools
 * **Programming Language:** Python
-* **Deep Learning & Frameworks:** TensorFlow, Keras, NumPy, Pillow (PIL), Flask
-* **Frontend & UI:** HTML5, CSS3, JavaScript, Custom UI Components
-* **Deployment & Version Control:** GitHub
+* **Deep Learning & Frameworks:** TensorFlow, Keras, NumPy, Pillow (PIL)
+* **Frontend & UI:** Streamlit, Streamlit-Drawable-Canvas, Custom CSS
+* **Deployment & Version Control:** Streamlit Community Cloud, GitHub
 
 ---
 
@@ -63,7 +61,7 @@ pip install -r requirements.txt
 
 3. **Run the application:**
 ```bash
-python app.py
+streamlit run app.py
 
 ```
 
@@ -76,15 +74,10 @@ python app.py
 ```text
 mnist-digit-recognition/
 │
-├── app.py                      # Main Flask application interface and routing logic
+├── app.py                      # Main Streamlit application interface and logic
 ├── MNIST DIGIT RECOGNITION.ipynb # Jupyter Notebook containing training and evaluation
 ├── mnist_digit_model.h5        # Trained CNN classification model
 ├── requirements.txt            # Project dependencies
-├── templates/
-│   └── index.html              # Frontend HTML interface
-├── static/
-│   ├── style.css               # Application stylesheet
-│   └── script.js               # Canvas and frontend interaction logic
 └── README.md                   # Project documentation
 
 ```
@@ -96,8 +89,8 @@ mnist-digit-recognition/
 * **Name:** Alina Zahra
 * **Internship Program:** Machine Learning Internship & Training Program (August – September 2026)
 * **Organization:** Arch Technologies
-* **GitHub:** [AlinaZahraHub](https://www.google.com/search?q=https://github.com/AlinaZahraHub)
-* **LinkedIn:** [Alina Zahra](https://www.linkedin.com/)
+* **GitHub:** [AlinaZahraHub](https://github.com/AlinaZahraHub)
+* **LinkedIn:** [Alina Zahra](https://www.linkedin.com/in/alina-zahra12/)
 
 ```
 
