@@ -138,11 +138,9 @@ else:
     # Interface Tabs
     tab1, tab2 = st.tabs(["✏️ Draw Digit", "☁️ Upload Image"])
 
-    processed_image = None
-
+    # ---------------- TAB 1: DRAW DIGIT ----------------
     with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
-        # Main Layout Split: Left (Draw + Prediction) vs Right (Probabilities)
         col_left, col_right = st.columns([1, 1], gap="large")
         
         with col_left:
@@ -164,87 +162,149 @@ else:
             st.markdown("<br>", unsafe_allow_html=True)
             predict_draw_btn = st.button("⚡ Run Prediction", key="btn_draw")
 
-            if canvas_result.image_data is not None and predict_draw_btn:
-                input_image = canvas_result.image_data
-                processed_image = Image.fromarray(input_image.astype('uint8'), mode="RGBA").convert('L')
-
         with col_right:
             st.markdown("<h3 style='color: #00c6ff;'>📊 Class Probabilities (0-9)</h3>", unsafe_allow_html=True)
             st.markdown("<span style='color: #94a3b8; font-size: 1rem;'>Live confidence breakdown per digit class.</span>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # Placeholder container for probabilities before prediction
-            prob_placeholder = st.empty()
-            with prob_placeholder.container():
+            prob_placeholder_draw = st.empty()
+            with prob_placeholder_draw.container():
                 st.info("👈 Draw a digit on the left and click **Run Prediction** to view probabilities.")
 
+        # Logic for Drawing Prediction
+        if canvas_result.image_data is not None and predict_draw_btn:
+            with st.spinner("Processing drawing pixels..."):
+                input_image = canvas_result.image_data
+                processed_image = Image.fromarray(input_image.astype('uint8'), mode="RGBA").convert('L')
+                
+                # Image Preprocessing Pipeline
+                image = ImageOps.fit(processed_image, (28, 28), Image.Resampling.LANCZOS)
+                img_array = np.array(image)
+                
+                if img_array.mean() > 127:
+                    img_array = 255 - img_array
+
+                img_array = img_array / 255.0
+                img_array = img_array.reshape(1, 28, 28, 1)
+
+                # Prediction
+                preds = model.predict(img_array)[0]
+                predicted_digit = int(np.argmax(preds))
+                confidence = float(np.max(preds)) * 100
+
+                # Render Result on Left (beneath canvas)
+                with col_left:
+                    st.markdown(f"""
+                        <div class="result-container">
+                            <span style="color: #94a3b8; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;">Predicted Result</span>
+                            <div class="predicted-digit">{predicted_digit}</div>
+                            <div class="confidence-text">Confidence: {confidence:.1f}%</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                # Render Probabilities on Right
+                with col_right:
+                    with prob_placeholder_draw.container():
+                        st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+                        for i, prob in enumerate(preds):
+                            prob_val = float(prob)
+                            percentage = prob_val * 100
+                            is_predicted = (i == predicted_digit)
+                            
+                            label_color = "#34d399" if is_predicted else "#94a3b8"
+                            font_weight = "800" if is_predicted else "400"
+                            
+                            bar_html = f"""
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: {label_color}; font-weight: {font_weight}; font-size: 1.05rem;">Digit {i}:</span>
+                                    <span style="color: {label_color}; font-weight: {font_weight}; font-size: 0.95rem;">{percentage:.1f}%</span>
+                                </div>
+                                <div style="background-color: #0d111c; border: 1px solid rgba(0, 198, 255, 0.2); border-radius: 10px; height: 14px; width: 100%; overflow: hidden;">
+                                    <div style="background: linear-gradient(135deg, #00c6ff 0%, #ff6584 100%); width: {percentage}%; height: 100%; border-radius: 8px; box-shadow: 0 0 10px rgba(255, 101, 132, 0.6);"></div>
+                                </div>
+                            </div>
+                            """
+                            st.markdown(bar_html, unsafe_allow_html=True)
+
+    # ---------------- TAB 2: UPLOAD IMAGE ----------------
     with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Browse or drop image file...", type=["png", "jpg", "jpeg"])
+        col_up_left, col_up_right = st.columns([1, 1], gap="large")
         
-        if uploaded_file is not None:
-            col_up1, col_up2 = st.columns(2)
-            with col_up1:
-                image = Image.open(uploaded_file).convert('L')
-                st.image(image, caption="Source Image Preview", width=200)
-            with col_up2:
-                st.markdown("<div style='padding-top: 50px;'></div>", unsafe_allow_html=True)
-                predict_up_btn = st.button("🚀 Analyze Upload", key="btn_up")
+        with col_up_left:
+            st.markdown("<h3 style='color: #ff6584;'>☁️ Upload an Image</h3>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #94a3b8; font-size: 1rem;'>Browse or drop a digit image file below.</span>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            if predict_up_btn:
-                processed_image = image
-
-    # Inference & Output Section for Drawing Tab
-    if processed_image is not None and tab1:
-        with st.spinner("Processing image pixels..."):
-            # Image Preprocessing Pipeline
-            image = ImageOps.fit(processed_image, (28, 28), Image.Resampling.LANCZOS)
-            img_array = np.array(image)
+            uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"], key="upload_file_box")
             
-            if img_array.mean() > 127:
-                img_array = 255 - img_array
+            uploaded_image = None
+            if uploaded_file is not None:
+                uploaded_image = Image.open(uploaded_file).convert('L')
+                st.image(uploaded_image, caption="Source Image Preview", width=220)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            predict_up_btn = st.button("🚀 Analyze Upload", key="btn_up")
 
-            img_array = img_array / 255.0
-            img_array = img_array.reshape(1, 28, 28, 1)
+        with col_up_right:
+            st.markdown("<h3 style='color: #00c6ff;'>📊 Upload Analysis & Probabilities</h3>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #94a3b8; font-size: 1rem;'>Live confidence breakdown for uploaded image.</span>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            prob_placeholder_upload = st.empty()
+            with prob_placeholder_upload.container():
+                st.info("👈 Upload an image on the left and click **Analyze Upload** to view results.")
 
-            # Prediction
-            preds = model.predict(img_array)[0]
-            predicted_digit = int(np.argmax(preds))
-            confidence = float(np.max(preds)) * 100
+        # Logic for Upload Prediction inside Tab 2
+        if uploaded_image is not None and predict_up_btn:
+            with st.spinner("Processing uploaded image pixels..."):
+                # Image Preprocessing Pipeline
+                image_up = ImageOps.fit(uploaded_image, (28, 28), Image.Resampling.LANCZOS)
+                img_array_up = np.array(image_up)
+                
+                if img_array_up.mean() > 127:
+                    img_array_up = 255 - img_array_up
 
-            # Render Prediction Result directly beneath the Canvas on the Left
-            with col_left:
-                st.markdown(f"""
-                    <div class="result-container">
-                        <span style="color: #94a3b8; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;">Predicted Result</span>
-                        <div class="predicted-digit">{predicted_digit}</div>
-                        <div class="confidence-text">Confidence: {confidence:.1f}%</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                img_array_up = img_array_up / 255.0
+                img_array_up = img_array_up.reshape(1, 28, 28, 1)
 
-            # Render Custom HTML Gradient Progress Bars on the Right
-            with col_right:
-                with prob_placeholder.container():
-                    st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
-                    for i, prob in enumerate(preds):
-                        prob_val = float(prob)
-                        percentage = prob_val * 100
-                        is_predicted = (i == predicted_digit)
-                        
-                        # Text styles based on prediction
-                        label_color = "#34d399" if is_predicted else "#94a3b8"
-                        font_weight = "800" if is_predicted else "400"
-                        
-                        # Custom HTML Progress Bar with exact gradient glow
-                        bar_html = f"""
-                        <div style="margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="color: {label_color}; font-weight: {font_weight}; font-size: 1.05rem;">Digit {i}:</span>
-                                <span style="color: {label_color}; font-weight: {font_weight}; font-size: 0.95rem;">{percentage:.1f}%</span>
-                            </div>
-                            <div style="background-color: #0d111c; border: 1px solid rgba(0, 198, 255, 0.2); border-radius: 10px; height: 14px; width: 100%; overflow: hidden;">
-                                <div style="background: linear-gradient(135deg, #00c6ff 0%, #ff6584 100%); width: {percentage}%; height: 100%; border-radius: 8px; box-shadow: 0 0 10px rgba(255, 101, 132, 0.6);"></div>
-                            </div>
+                # Prediction
+                preds_up = model.predict(img_array_up)[0]
+                predicted_digit_up = int(np.argmax(preds_up))
+                confidence_up = float(np.max(preds_up)) * 100
+
+                # Render Result on Left (beneath preview in tab2)
+                with col_up_left:
+                    st.markdown(f"""
+                        <div class="result-container">
+                            <span style="color: #94a3b8; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;">Predicted Result</span>
+                            <div class="predicted-digit">{predicted_digit_up}</div>
+                            <div class="confidence-text">Confidence: {confidence_up:.1f}%</div>
                         </div>
-                        """
-                        st.markdown(bar_html, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+
+                # Render Probabilities on Right in tab2
+                with col_up_right:
+                    with prob_placeholder_upload.container():
+                        st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+                        for i, prob in enumerate(preds_up):
+                            prob_val = float(prob)
+                            percentage = prob_val * 100
+                            is_predicted = (i == predicted_digit_up)
+                            
+                            label_color = "#34d399" if is_predicted else "#94a3b8"
+                            font_weight = "800" if is_predicted else "400"
+                            
+                            bar_html = f"""
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: {label_color}; font-weight: {font_weight}; font-size: 1.05rem;">Digit {i}:</span>
+                                    <span style="color: {label_color}; font-weight: {font_weight}; font-size: 0.95rem;">{percentage:.1f}%</span>
+                                </div>
+                                <div style="background-color: #0d111c; border: 1px solid rgba(0, 198, 255, 0.2); border-radius: 10px; height: 14px; width: 100%; overflow: hidden;">
+                                    <div style="background: linear-gradient(135deg, #00c6ff 0%, #ff6584 100%); width: {percentage}%; height: 100%; border-radius: 8px; box-shadow: 0 0 10px rgba(255, 101, 132, 0.6);"></div>
+                                </div>
+                            </div>
+                            """
+                            st.markdown(bar_html, unsafe_allow_html=True)
